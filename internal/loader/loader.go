@@ -2,7 +2,7 @@ package loader
 
 import (
 	"errors"
-	"ioutil"
+	"io/ioutil"
 	"bytes"
 
 	gobpf "github.com/iovisor/gobpf/elf"
@@ -42,8 +42,8 @@ func (h *hook) Load(elf string) error {
 }
 
 func (h *hook) Attach(iface, sec string) error {
-	h.module.iface = iface
-	h.module.sec = sec
+	h.iface = iface
+	h.sec = sec
 	return h.module.AttachXDP(iface, sec)
 }
 

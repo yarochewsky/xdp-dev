@@ -3,9 +3,8 @@ package main
 import (
 	"log"
 
-	"xdp-dev/internal/loader"
+	"github.com/yarochewsky/xdp-dev/internal/loader"
 )
-
 const (
 	file = "xdp/elfs/drop.o"
 	iface = "vethf1812f4"
@@ -14,10 +13,13 @@ const (
 
 func main() {
 	l := loader.New()
-	if err := l.Attach(file); err != nil {
-		log.Fatalln("failed to attach file: ", err)
+	if err := l.Load(file); err != nil {
+		log.Fatalln("failed to load file: ", err)
 	}
-	if err := l.Load(iface, sec); err != nil {
-		log.Fatalln("failed to load: ", err)
+	if err := l.Attach(iface, sec); err != nil {
+		log.Fatalln("failed to attach: ", err)
+	}
+	if err := l.Detach(); err != nil {
+		log.Fatalln("failed to detach: ", err)
 	}
 }
