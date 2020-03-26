@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/yarochewsky/xdp-dev/loader"
+	"xdp-dev/internal/loader"
 )
 
 const (
