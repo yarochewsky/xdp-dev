@@ -2,10 +2,8 @@ package main
 
 import (
 	"log"
-	"bytes"
-	"io/ioutil"
 
-	gobpf "github.com/iovisor/gobpf/elf"
+	"github.com/yarochewsky/xdp-dev/loader"
 )
 
 const (
@@ -15,18 +13,11 @@ const (
 )
 
 func main() {
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		log.Fatal("elf not found")
+	l := loader.New()
+	if err := l.Attach(file); err != nil {
+		log.Fatalln("failed to attach file: ", err)
 	}
-  module := gobpf.NewModuleFromReader(bytes.NewReader(data))
-	if module == nil {
-		log.Fatal("failed to establish module for elf")
-	}
-	if err := module.Load(nil); err != nil {
-		log.Fatalln("failed to load module", err)
-	}
-	if err := module.AttachXDP(iface, sec); err != nil {
-		log.Fatalln("failed to attach program:", err)
+	if err := l.Load(iface, sec); err != nil {
+		log.Fatalln("failed to load: ", err)
 	}
 }
