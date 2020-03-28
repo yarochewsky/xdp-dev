@@ -2,7 +2,7 @@ build:
 	go build ./
 
 run:
-	go run main.go
+	go run main.go $(ARGS)
 
 DOCKER_TEST_DIR = "./docker-test"
 DOCKER_TEST_IMG = "xdp-test"
