@@ -77,7 +77,7 @@ unsigned long long load_word(void *skb,
 /* a helper structure used by eBPF C program
  * to describe map attributes to elf_bpf loader
  */
-struct bpf_map_def {
+/*struct bpf_map_def {
 	unsigned int type;
 	unsigned int key_size;
 	unsigned int value_size;
@@ -86,6 +86,7 @@ struct bpf_map_def {
 	unsigned int inner_map_idx;
 	unsigned int numa_node;
 };
+*/
 
 static int (*bpf_skb_load_bytes)(void *ctx, int off, void *to, int len) =
 	(void *) BPF_FUNC_skb_load_bytes;

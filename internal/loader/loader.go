@@ -12,6 +12,7 @@ type Hook interface {
 	Load(elf string) error
 	Attach(iface, sec string) error
 	Detach() error
+	Current() *gobpf.Module
 }
 
 type hook struct {
@@ -23,6 +24,10 @@ type hook struct {
 
 func New() Hook {
 	return &hook{}
+}
+
+func (h *hook) Current() *gobpf.Module {
+	return h.module
 }
 
 func (h *hook) Load(elf string) error {
