@@ -19,7 +19,4 @@ func main() {
 	if err := l.Attach(iface, sec); err != nil {
 		log.Fatalln("failed to attach: ", err)
 	}
-	if err := l.Detach(); err != nil {
-		log.Fatalln("failed to detach: ", err)
-	}
 }

@@ -24,7 +24,7 @@ CFLAGS =  -I ./include \
 ELFS_DIR = elfs
 SRC_DIR = src
 
-OBJS = pass.o drop.o
+OBJS = pass.o drop.o pass_drop.o
 
 all: $(OBJS)
 
