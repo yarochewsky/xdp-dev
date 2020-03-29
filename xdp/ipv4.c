@@ -5,16 +5,11 @@
 #define XDP_ACTION_MAX (XDP_REDIRECT + 1)
 #endif
 
-struct stats {
-	__u32 count;
-	__u64 size;
-};
-
-struct bpf_map_def SEC("maps/xdp_stats_map") xdp_stats_map = {
+struct bpf_map_def SEC("maps") xdp_stats_map = {
 	.type = BPF_MAP_TYPE_ARRAY,
 	.key_size = sizeof(__u32), // type of xdp action
 	.value_size = sizeof(__u32), // number of packets
-	.max_entries = 256,
+	.max_entries = XDP_ACTION_MAX,
 };
 
 #ifndef lock_xadd

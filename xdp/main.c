@@ -17,7 +17,6 @@ int load_xdp_object_file(const char* filename, int ifindex, struct bpf_object** 
 		.file = filename,
 	};
 
-	//err = bpf_prog_load(filename, BPF_PROG_TYPE_XDP, obj, &fd);
 	err = bpf_prog_load_xattr(&attr, obj, &fd);
 	if (err) {
 		fprintf(stderr, "err: loading ebpf object file(%s): %s\n", filename, strerror(-err));
@@ -136,5 +135,22 @@ int main(int argc, char** argv) {
 
 	printf("loaded %s into %s!\n", elf, iface);
 
+	int map_fd = bpf_object__find_map_fd_by_name(obj, "xdp_stats_map");
+	if (map_fd < 0) {
+		xdp_link_detach(ifindex, flags);
+		fprintf(stderr, "err: could not find map by name %s\n", "xdp_stats_map");
+		return -1;
+	}
+
+	__u32 key = 2;
+ 	__u32 val;
+	while(true) {
+			if((bpf_map_lookup_elem(map_fd, &key, &val)) != 0) {
+				fprintf(stderr, "err: looking up key: %d\n", key);
+			} else {
+				printf("val is %d\n", val);
+			}
+	}
+	
 	return 0;
 }
