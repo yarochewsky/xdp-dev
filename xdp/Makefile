@@ -42,6 +42,18 @@ BIN_DIR = bin
 main: main.c
 	$(CLANG) $(CFLAGS_USER) $^ -L. -lbpf -lelf -lz -o $(BIN_DIR)/main  	
 
+DOCKER_TEST_DIR = "./docker-test"
+DOCKER_TEST_IMG = "xdp-test"
+
+veth:
+	bash $(DOCKER_TEST_DIR)/scripts/veth.sh
+
+docker-build:
+	docker build -t $(DOCKER_TEST_IMG) $(DOCKER_TEST_DIR)/.
+
+docker-run:
+	docker run -it $(DOCKER_TEST_IMG)
+
 .PHONY: clean
 clean:
 	rm -f $(ELFS_DIR)/$(OBJS)
