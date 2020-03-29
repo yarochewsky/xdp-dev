@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include "bpf/bpf.h"
 #include "bpf/libbpf.h"
-
 #include <net/if.h>
 #include <linux/if_link.h>
+#include "stats.h"
 
 int load_xdp_object_file(const char* filename, int ifindex, struct bpf_object** obj) {
 	int fd = -1;
@@ -143,12 +143,21 @@ int main(int argc, char** argv) {
 	}
 
 	__u32 key = 2;
- 	__u32 val;
+	unsigned int n_cpus = libbpf_num_possible_cpus();
+// bpf_num_possible_cpus();
+	__u64 sum_pkts = 0;
+	__u64 sum_bytes = 0;
+
+ 	struct stats vals[n_cpus];
 	while(true) {
-			if((bpf_map_lookup_elem(map_fd, &key, &val)) != 0) {
+			if((bpf_map_lookup_elem(map_fd, &key, vals)) != 0) {
 				fprintf(stderr, "err: looking up key: %d\n", key);
 			} else {
-				printf("val is %d\n", val);
+				for (int i = 0; i < n_cpus; i++) {
+					sum_pkts += vals[i].count;
+					sum_bytes +=vals[i].bytes;
+				}
+				printf("count is %llu, bytes is :%llu\n", sum_pkts, sum_bytes);
 			}
 	}
 	
