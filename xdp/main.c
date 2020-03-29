@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
-#include "bpf/bpf.h"
-#include "bpf/libbpf.h"
 #include <net/if.h>
 #include <linux/if_link.h>
 #include "stats.h"
+#include <bpf/bpf.h>
+#include <bpf/libbpf.h>
+#include "bpf_util.h"
+
 
 int load_xdp_object_file(const char* filename, int ifindex, struct bpf_object** obj) {
 	int fd = -1;
@@ -143,8 +145,7 @@ int main(int argc, char** argv) {
 	}
 
 	__u32 key = 2;
-	unsigned int n_cpus = libbpf_num_possible_cpus();
-// bpf_num_possible_cpus();
+	unsigned int n_cpus = bpf_num_possible_cpus();
 	__u64 sum_pkts = 0;
 	__u64 sum_bytes = 0;
 

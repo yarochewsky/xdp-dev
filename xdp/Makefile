@@ -8,7 +8,7 @@ CFLAGS_USER = -Wunused \
 	-Wall \
 	-Wno-compare-distinct-pointer-types \
 	-fno-stack-protector \
-	-Wno-pointer-sign
+	-Wno-pointer-sign \
 
 CFLAGS =  -I ./include \
 	-I $(LINUX_HEADERS)/build/arch/x86/include \
@@ -19,6 +19,7 @@ CFLAGS =  -I ./include \
 	-I $(LINUX_HEADERS)/build/include/uapi \
 	-include $(LINUX_HEADERS)/build/include/linux/kconfig.h \
 	-I $(LINUX_HEADERS)/build/include/generated/uapi \
+	-I../libbpf/src/root/usr/include/ \
 	-D__KERNEL__ -D__ASM_SYSREG_H \
 	-Wunused \
 	-Wall \
@@ -40,7 +41,7 @@ $(OBJS): %.o:%.c
 BIN_DIR = bin
 
 main: main.c
-	$(CLANG) $(CFLAGS_USER) $^ -L. -lbpf -lelf -lz -o $(BIN_DIR)/main  	
+	$(CLANG) $(CFLAGS_USER) $^ -L. -I../libbpf/src/root/usr/include/ -lbpf -lelf -lz -o $(BIN_DIR)/main  	
 
 DOCKER_TEST_DIR = "./docker-test"
 DOCKER_TEST_IMG = "xdp-test"
