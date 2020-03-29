@@ -4,6 +4,12 @@ CLANG ?= clang
 LLC ?= llc
 SHELL=bash -o pipefail -e
 
+CFLAGS_USER = -Wunused \
+	-Wall \
+	-Wno-compare-distinct-pointer-types \
+	-fno-stack-protector \
+	-Wno-pointer-sign
+
 CFLAGS =  -I ./include \
 	-I $(LINUX_HEADERS)/build/arch/x86/include \
 	-I $(LINUX_HEADERS)/build/arch/x86/include/generated/uapi \
@@ -30,6 +36,11 @@ all: $(OBJS)
 
 $(OBJS): %.o:%.c
 	$(CLANG) $(CFLAGS) -c $< -o - | $(LLC) -march=bpf -mcpu=$(CPU) -filetype=obj -o $(ELFS_DIR)/$@
+
+BIN_DIR = bin
+
+main: main.c
+	$(CLANG) $(CFLAGS_USER) $^ -L. -lbpf -lelf -lz -o $(BIN_DIR)/main  	
 
 .PHONY: clean
 clean:

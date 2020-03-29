@@ -14,6 +14,14 @@ import (
 	gobpf "github.com/iovisor/gobpf/elf"
 )
 
+/*
+struct stats {
+	int count;
+	int size;
+};
+*/
+import "C"
+
 var (
 	iface = flag.String("iface", "", "interface to attach program to")
 )
@@ -33,7 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var value uint32
+	var value C.stats
 	key := 2
 
 	for {
