@@ -1,6 +1,6 @@
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
-#include "stats.h"
+#include "headers/stats.h"
 
 #ifndef XDP_ACTION_MAX
 #define XDP_ACTION_MAX (XDP_REDIRECT + 1)
