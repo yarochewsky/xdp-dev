@@ -8,7 +8,9 @@ CFLAGS_USER = -Wunused \
 	-Wall \
 	-Wno-compare-distinct-pointer-types \
 	-fno-stack-protector \
-	-Wno-pointer-sign \
+	-Wno-pointer-sign 
+
+LINK_USER = -L. -I../libbpf/src/root/usr/include/ -lbpf -lelf -lz 
 
 CFLAGS =  -I ./include \
 	-I $(LINUX_HEADERS)/build/arch/x86/include \
@@ -40,9 +42,15 @@ $(OBJS): %.o:%.c
 
 BIN_DIR = bin
 
-main: main.c
-	$(CLANG) $(CFLAGS_USER) $^ -L. -I../libbpf/src/root/usr/include/ -lbpf -lelf -lz -o $(BIN_DIR)/main  	
+main: main.o loader.o
+	$(CLANG) main.o loader/loader.o $(LINK_USER) -o $(BIN_DIR)/main  	
 
+main.o: main.c
+	$(CLANG) -Wall -I../libbpf/src/root/usr/include/ -c main.c -o main.o
+
+loader.o: loader/loader.c loader/loader.h
+	$(CLANG) -Wall -I../libbpf/src/root/usr/include/ -c loader/loader.c -o loader/loader.o
+	
 DOCKER_TEST_DIR = "./docker-test"
 DOCKER_TEST_IMG = "xdp-test"
 
@@ -54,6 +62,9 @@ docker-build:
 
 docker-run:
 	docker run -it $(DOCKER_TEST_IMG)
+
+leak-check:
+	valgrind --leak-check=full ./bin/*
 
 .PHONY: clean
 clean:
