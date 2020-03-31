@@ -16,7 +16,7 @@ struct hdr_cursor {
 };
 
 
-static int parse_eth_header(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
+static __always_inline int parse_eth_header(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
 	struct ethhdr* eth = hc->pos;
 	int hdrsize = sizeof(*eth);
 
@@ -28,7 +28,7 @@ static int parse_eth_header(struct hdr_cursor* hc, void* data_end, struct ethhdr
 	return eth->h_proto;
 }
 
-static int parse_ipv6_header(struct hdr_cursor* hc, void* data_end, struct ipv6hdr** ipv6_hdr) {
+static __always_inline int parse_ipv6_header(struct hdr_cursor* hc, void* data_end, struct ipv6hdr** ipv6_hdr) {
 	struct ipv6hdr* ipv6h = hc->pos;
 
 	if (ipv6h + 1 > data_end) return -1;
@@ -39,7 +39,7 @@ static int parse_ipv6_header(struct hdr_cursor* hc, void* data_end, struct ipv6h
 	return ipv6h->nexthdr;
 }
 
-static int parse_icmp6_header(struct hdr_cursor* hc, void* data_end, struct icmp6hdr** icmp6_hdr) {
+static __always_inline int parse_icmp6_header(struct hdr_cursor* hc, void* data_end, struct icmp6hdr** icmp6_hdr) {
 	struct icmp6hdr* icmp6h = hc->pos;
 
 	if (icmp6h + 1 > data_end) return -1;
