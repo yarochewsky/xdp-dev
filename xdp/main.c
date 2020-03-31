@@ -69,6 +69,12 @@ int main(int argc, char** argv) {
 
 	printf("loaded %s into %s!\n", elf, iface);
 
+	if ((err = pin_object_map(obj, "/sys/fs/bpf", "xdp_stats_map")) != 0) {
+		fprintf(stderr, "err: pinning map\n");
+		xdp_link_detach(ifindex, flags);
+		return -1;
+	}
+
 	int map_fd = bpf_object__find_map_fd_by_name(obj, "xdp_stats_map");
 	if (map_fd < 0) {
 		xdp_link_detach(ifindex, flags);
@@ -78,17 +84,17 @@ int main(int argc, char** argv) {
 
 	__u32 key = 2;
 	unsigned int n_cpus = bpf_num_possible_cpus();
-	__u64 sum_pkts = 0;
-	__u64 sum_bytes = 0;
-
  	struct stats vals[n_cpus];
+
 	while(true) {
+			__u64 sum_pkts = 0;
+			__u64 sum_bytes = 0;
 			if((bpf_map_lookup_elem(map_fd, &key, vals)) != 0) {
 				fprintf(stderr, "err: looking up key: %d\n", key);
 			} else {
 				for (int i = 0; i < n_cpus; i++) {
 					sum_pkts += vals[i].count;
-					sum_bytes +=vals[i].bytes;
+					sum_bytes += vals[i].bytes;
 				}
 				printf("count is %llu, bytes is :%llu\n", sum_pkts, sum_bytes);
 			}

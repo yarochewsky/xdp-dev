@@ -42,4 +42,15 @@ int xdp_link_detach(int ifindex, __u32 xdp_flags);
 int xdp_link_attach(int ifindex, __u32 xdp_flags, int fd);
 
 
+/**
+	pin_object_map: pins map of obj in dir
+
+	@obj: object containing map to pin
+	@dir: directory on fs to pin map to
+	@map_name: name of map to pin under dir
+
+	@return non-zero for error
+**/
+int pin_object_map(struct bpf_object* obj, const char* dir, const char* map_name);
+
 #endif // _LOADER_H

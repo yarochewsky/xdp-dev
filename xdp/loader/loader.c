@@ -5,9 +5,32 @@
 #include <stdlib.h>
 #include <net/if.h>
 #include <linux/if_link.h>
+#include <unistd.h> // for access()
 #include <bpf/bpf.h>
 #include <bpf/libbpf.h>
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
+int pin_object_map(struct bpf_object* obj, const char* dir, const char* map_name) {
+	char map_filename[PATH_MAX];
+	int len;
+
+	if ((len = snprintf(map_filename, PATH_MAX, "%s/%s", dir, map_name)) < 0) {
+		fprintf(stderr, "err: creating map filename\n");
+		return -1;	
+	}
+	
+	if (access(map_filename, F_OK) != -1) {
+		if (bpf_object__unpin_maps(obj, dir)) {
+			fprintf(stderr, "err: unpining maps in %s\n", dir);
+			return -1;
+		}
+	}
+	
+	return bpf_object__pin_maps(obj, dir);
+}
 
 int load_xdp_object_file(const char* filename, int ifindex, struct bpf_object** obj) {
 	int fd = -1;
