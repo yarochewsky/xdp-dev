@@ -21,7 +21,7 @@ int pin_object_map(struct bpf_object* obj, const char* dir, const char* map_name
 		fprintf(stderr, "err: creating map filename\n");
 		return -1;	
 	}
-	
+
 	if (access(map_filename, F_OK) != -1) {
 		if (bpf_object__unpin_maps(obj, dir)) {
 			fprintf(stderr, "err: unpining maps in %s\n", dir);

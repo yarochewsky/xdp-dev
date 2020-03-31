@@ -12,7 +12,7 @@ CFLAGS_USER = -Wunused \
 
 LINK_USER = -L. -I../libbpf/src/root/usr/include/ -lbpf -lelf -lz 
 
-CFLAGS =  -I ./include \
+#CFLAGS_OLD =  -I ./include \
 	-I $(LINUX_HEADERS)/build/arch/x86/include \
 	-I $(LINUX_HEADERS)/build/arch/x86/include/generated/uapi \
 	-I $(LINUX_HEADERS)/build/arch/x86/include/generated \
@@ -21,6 +21,8 @@ CFLAGS =  -I ./include \
 	-I $(LINUX_HEADERS)/build/include/uapi \
 	-include $(LINUX_HEADERS)/build/include/linux/kconfig.h \
 	-I $(LINUX_HEADERS)/build/include/generated/uapi \
+
+CFLAGS = -I ./include \
 	-I../libbpf/src/root/usr/include/ \
 	-D__KERNEL__ -D__ASM_SYSREG_H \
 	-Wunused \
@@ -33,7 +35,7 @@ CFLAGS =  -I ./include \
 ELFS_DIR = elfs
 SRC_DIR = src
 
-OBJS = pass.o drop.o pass_drop.o ipv4.o
+OBJS = pkt.o
 
 all: $(OBJS)
 
