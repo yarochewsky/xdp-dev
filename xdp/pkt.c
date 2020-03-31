@@ -11,10 +11,24 @@
 #define ICMP_6 58 // proto number on next header ipv6 pkt
 #endif
 
+#ifndef MAX_VLAN_DEPTH
+#define MAX_VLAN_DEPTH 4
+#endif
+
 struct hdr_cursor {
 	void* pos;
 };
 
+
+struct vlan_hdr {
+	__be16	h_vlan_TCI;
+	__be16	h_vlan_encapsulated_proto;
+};
+
+
+static __always_inline int is_vlan(__u16 h_proto) {
+	return !!(h_proto == bpf_htons(ETH_P_8021Q) || h_proto == bpf_htons(ETH_P_8021AD));
+}
 
 static __always_inline int parse_eth_header(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
 	struct ethhdr* eth = hc->pos;
@@ -22,10 +36,21 @@ static __always_inline int parse_eth_header(struct hdr_cursor* hc, void* data_en
 
 	if (hc->pos + hdrsize > data_end) return -1;
 
-	hc->pos += hdrsize;
+	int proto;
+	struct vlan_hdr* vlan = hc->pos;
+
+	#pragma unroll
+	for (int i = 0; i < MAX_VLAN_DEPTH; i++) {
+		if (!is_vlan(eth->h_proto)) break;
+		if (vlan + 1 > data_end) break;
+		proto = vlan->h_vlan_encapsulated_proto;
+		vlan++;
+	}
+
+	hc->pos = vlan;
 	*eth_hdr = eth;
 
-	return eth->h_proto;
+	return proto;
 }
 
 static __always_inline int parse_ipv6_header(struct hdr_cursor* hc, void* data_end, struct ipv6hdr** ipv6_hdr) {
