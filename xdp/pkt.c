@@ -65,10 +65,10 @@ int filer_func(struct xdp_md* ctx) {
 	struct ipv6hdr* ipv6_hdr;
 	pkt_type = parse_ipv6_header(&hc, data_end, &ipv6_hdr);
 
-	if (pkt_type != bpf_htons(ICMP_6)) return XDP_ABORTED;
+	if (pkt_type != bpf_htons(ICMP_6)) return XDP_PASS;
 	
 	struct icmp6hdr* icmp6_hdr;
-	if (parse_icmp6_header(&hc, data_end, &icmp6_hdr) < 0) return XDP_ABORTED;
+	if (parse_icmp6_header(&hc, data_end, &icmp6_hdr) < 0) return XDP_PASS;
 
 	if (bpf_htons(icmp6_hdr->icmp6_sequence) % 2 == 0) return XDP_ABORTED;
 	
