@@ -7,6 +7,9 @@
 #include <linux/icmpv6.h>
 #include <linux/ipv6.h>
 
+#ifndef ICMP_6
+#define ICMP_6 58 // proto number on next header ipv6 pkt
+#endif
 
 struct hdr_cursor {
 	void* pos;
@@ -36,21 +39,38 @@ static __always_inline int parse_ipv6_header(struct hdr_cursor* hc, void* data_e
 	return ipv6h->nexthdr;
 }
 
+static __always_inline int parse_icmp6_header(struct hdr_cursor* hc, void* data_end, struct icmp6hdr** icmp6_hdr) {
+	struct icmp6hdr* icmp6h = hc->pos;
+
+	if (icmp6h + 1 > data_end) return -1;
+
+	hc->pos = icmp6h + 1;
+	*icmp6_hdr = icmp6h;
+
+	return 0;
+}
+
 SEC("filter")
 int filer_func(struct xdp_md* ctx) {
+	int pkt_type;
 	void* data_end = (void*) (long) ctx->data_end;
 	void* data = (void*) (long) ctx->data;
 
 	struct ethhdr* eth_hdr;
 	struct hdr_cursor hc = { .pos = data };
 
-	int pkt_type = parse_eth_header(&hc, data_end, &eth_hdr);
-	if (pkt_type == bpf_htons(ETH_P_IPV6)) {
-		return XDP_ABORTED;
-	}
+	pkt_type = parse_eth_header(&hc, data_end, &eth_hdr);
+	if (pkt_type != bpf_htons(ETH_P_IPV6)) return XDP_ABORTED;
 
 	struct ipv6hdr* ipv6_hdr;
 	pkt_type = parse_ipv6_header(&hc, data_end, &ipv6_hdr);
+
+	if (pkt_type != bpf_htons(ICMP_6)) return XDP_ABORTED;
+	
+	struct icmp6hdr* icmp6_hdr;
+	if (parse_icmp6_header(&hc, data_end, &icmp6_hdr) < 0) return XDP_ABORTED;
+
+	if (bpf_htons(icmp6_hdr->icmp6_sequence) % 2 == 0) return XDP_ABORTED;
 	
 	return XDP_PASS;
 }
