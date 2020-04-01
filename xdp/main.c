@@ -75,10 +75,10 @@ int main(int argc, char** argv) {
 //		return -1;
 //	}
 //
-//	int map_fd = bpf_object__find_map_fd_by_name(obj, "xdp_stats_map");
+//	int map_fd = bpf_object__find_map_fd_by_name(obj, "stats");
 //	if (map_fd < 0) {
 //		xdp_link_detach(ifindex, flags);
-//		fprintf(stderr, "err: could not find map by name %s\n", "xdp_stats_map");
+//		fprintf(stderr, "err: could not find map by name %s\n", "stats");
 //		return -1;
 //	}
 //

@@ -68,6 +68,9 @@ docker-run:
 leak-check:
 	valgrind --leak-check=full ./bin/*
 
+debug:
+	sudo cat /sys/kernel/debug/tracing/trace_pipe
+
 .PHONY: clean
 clean:
 	rm -f $(ELFS_DIR)/$(OBJS)

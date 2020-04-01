@@ -13,6 +13,13 @@
 #define MAX_VLAN_DEPTH 4
 #endif
 
+
+#define printt(fmt, ...)																			\
+{																														\
+	char __fmt[] = fmt; 																				\
+	bpf_trace_printk(__fmt, sizeof(__fmt), ##__VA_ARGS__); 	\
+}
+
 struct hdr_cursor {
 	void* pos;
 };
@@ -28,27 +35,27 @@ static __always_inline int is_vlan(__u16 h_proto) {
 	return !!(h_proto == bpf_htons(ETH_P_8021Q) || h_proto == bpf_htons(ETH_P_8021AD));
 }
 
-static __always_inline int parse_eth_header(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
-	struct ethhdr* eth = hc->pos;
+static __always_inline int parse_eth_header(struct hdr_cursor *nh,
+					void *data_end,
+					struct ethhdr **ethhdr)
+{
+	struct ethhdr *eth = nh->pos;
 	int hdrsize = sizeof(*eth);
 
-	if (hc->pos + hdrsize > data_end) return -1;
+	/* Byte-count bounds check; check if current pointer + size of header
+	 * is after data_end.
+	 */
+	if (eth  + 1 > data_end)
+		return -1;
 
-	int proto;
-	struct vlan_hdr* vlan = hc->pos;
+	nh->pos += hdrsize;
+	*ethhdr = eth;
 
-	#pragma unroll
-	for (int i = 0; i < MAX_VLAN_DEPTH; i++) {
-		if (!is_vlan(eth->h_proto)) break;
-		if (vlan + 1 > data_end) break;
-		proto = vlan->h_vlan_encapsulated_proto;
-		vlan++;
-	}
+	return eth->h_proto; /* network-byte-order */
+}
 
-	hc->pos = vlan;
-	*eth_hdr = eth;
-
-	return proto;
+static __always_inline int parse_eth_header_vlan(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
+	//TODO: implement this
 }
 
 static __always_inline int parse_ipv4_header(struct hdr_cursor* hc, void* data_end, struct iphdr** ipv4_hdr) {
@@ -108,19 +115,20 @@ int filer_func(struct xdp_md* ctx) {
 	if (pkt_type == bpf_htons(ETH_P_IPV6)) {
 		struct ipv6hdr* ipv6_hdr;
 		pkt_type = parse_ipv6_header(&hc, data_end, &ipv6_hdr);
+		printt("type is %d\n", pkt_type);
 		if (pkt_type != IPPROTO_ICMPV6) return XDP_PASS;	
 		struct icmp6hdr* icmp6_hdr;
 		if (parse_icmp6_header(&hc, data_end, &icmp6_hdr) < 0) return XDP_PASS;
 		if (bpf_htons(icmp6_hdr->icmp6_sequence) % 2 == 0) return XDP_DROP;
-	} 
-
-	struct iphdr* ipv4_hdr;
- 	pkt_type = parse_ipv4_header(&hc, data_end, &ipv4_hdr);
-  if (pkt_type != IPPROTO_ICMP) return XDP_PASS;
-  struct icmphdr* icmp_hdr;
-  if (parse_icmp_header(&hc, data_end, &icmp_hdr) < 0) return XDP_PASS;
-  if (bpf_htons(icmp_hdr->un.echo.sequence) % 2 == 0) return XDP_DROP;
-
+	} else {
+		struct iphdr* ipv4_hdr;
+ 		pkt_type = parse_ipv4_header(&hc, data_end, &ipv4_hdr);
+		printt("type is %d\n", pkt_type);
+	 	if (pkt_type != IPPROTO_ICMP) return XDP_PASS;
+  	struct icmphdr* icmp_hdr;
+  	if (parse_icmp_header(&hc, data_end, &icmp_hdr) < 0) return XDP_PASS;
+  	if (bpf_htons(icmp_hdr->un.echo.sequence) % 2 == 0) return XDP_DROP;
+	}
 	return XDP_PASS;
 }
 
