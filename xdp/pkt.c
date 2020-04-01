@@ -5,11 +5,9 @@
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/icmpv6.h>
+#include <linux/icmp.h>
 #include <linux/ipv6.h>
-
-#ifndef ICMP_6
-#define ICMP_6 58 // proto number on next header ipv6 pkt
-#endif
+#include <linux/ip.h>
 
 #ifndef MAX_VLAN_DEPTH
 #define MAX_VLAN_DEPTH 4
@@ -53,6 +51,17 @@ static __always_inline int parse_eth_header(struct hdr_cursor* hc, void* data_en
 	return proto;
 }
 
+static __always_inline int parse_ipv4_header(struct hdr_cursor* hc, void* data_end, struct iphdr** ipv4_hdr) {
+	struct iphdr* ipv4h = hc->pos;
+
+	if (ipv4h + 1 > data_end) return -1;
+	
+	hc->pos = ipv4h + 1;
+	*ipv4_hdr = ipv4h;
+
+	return ipv4h->protocol;
+}
+
 static __always_inline int parse_ipv6_header(struct hdr_cursor* hc, void* data_end, struct ipv6hdr** ipv6_hdr) {
 	struct ipv6hdr* ipv6h = hc->pos;
 
@@ -72,7 +81,18 @@ static __always_inline int parse_icmp6_header(struct hdr_cursor* hc, void* data_
 	hc->pos = icmp6h + 1;
 	*icmp6_hdr = icmp6h;
 
-	return 0;
+	return icmp6h->icmp6_type;
+}
+
+static __always_inline int parse_icmp_header(struct hdr_cursor* hc, void* data_end, struct icmphdr** icmp_hdr) {
+	struct icmphdr* icmph = hc->pos;
+
+	if (icmph + 1 > data_end) return -1;
+
+	hc->pos = icmph + 1;
+	*icmp_hdr = icmph;
+
+	return icmph->type;
 }
 
 SEC("filter")
@@ -85,18 +105,22 @@ int filer_func(struct xdp_md* ctx) {
 	struct hdr_cursor hc = { .pos = data };
 
 	pkt_type = parse_eth_header(&hc, data_end, &eth_hdr);
-	if (pkt_type != bpf_htons(ETH_P_IPV6)) return XDP_ABORTED;
+	if (pkt_type == bpf_htons(ETH_P_IPV6)) {
+		struct ipv6hdr* ipv6_hdr;
+		pkt_type = parse_ipv6_header(&hc, data_end, &ipv6_hdr);
+		if (pkt_type != IPPROTO_ICMPV6) return XDP_PASS;	
+		struct icmp6hdr* icmp6_hdr;
+		if (parse_icmp6_header(&hc, data_end, &icmp6_hdr) < 0) return XDP_PASS;
+		if (bpf_htons(icmp6_hdr->icmp6_sequence) % 2 == 0) return XDP_DROP;
+	} 
 
-	struct ipv6hdr* ipv6_hdr;
-	pkt_type = parse_ipv6_header(&hc, data_end, &ipv6_hdr);
+	struct iphdr* ipv4_hdr;
+ 	pkt_type = parse_ipv4_header(&hc, data_end, &ipv4_hdr);
+  if (pkt_type != IPPROTO_ICMP) return XDP_PASS;
+  struct icmphdr* icmp_hdr;
+  if (parse_icmp_header(&hc, data_end, &icmp_hdr) < 0) return XDP_PASS;
+  if (bpf_htons(icmp_hdr->un.echo.sequence) % 2 == 0) return XDP_DROP;
 
-	if (pkt_type != bpf_htons(ICMP_6)) return XDP_PASS;
-	
-	struct icmp6hdr* icmp6_hdr;
-	if (parse_icmp6_header(&hc, data_end, &icmp6_hdr) < 0) return XDP_PASS;
-
-	if (bpf_htons(icmp6_hdr->icmp6_sequence) % 2 == 0) return XDP_ABORTED;
-	
 	return XDP_PASS;
 }
 
