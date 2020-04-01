@@ -56,7 +56,8 @@ static __always_inline int parse_eth_header(struct hdr_cursor *nh,
 
 static __always_inline int parse_eth_vlan_header(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
 	struct ethhdr* eth = hc->pos;
-	if (hc->pos + sizeof(*eth) > data_end) return -1;
+//	if (hc->pos + sizeof(*eth) > data_end) return -1;
+	if (eth + 1 > data_end) return -1;
 	hc->pos += sizeof(*eth);
 	*eth_hdr = eth;
 	int proto = eth->h_proto;
