@@ -10,7 +10,7 @@
 #include <linux/ip.h>
 
 #ifndef MAX_VLAN_DEPTH
-#define MAX_VLAN_DEPTH 4
+#define MAX_VLAN_DEPTH 2
 #endif
 
 
@@ -56,16 +56,18 @@ static __always_inline int parse_eth_header(struct hdr_cursor *nh,
 
 static __always_inline int parse_eth_vlan_header(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
 	struct ethhdr* eth = hc->pos;
-//	if (hc->pos + sizeof(*eth) > data_end) return -1;
 	if (eth + 1 > data_end) return -1;
 	hc->pos += sizeof(*eth);
 	*eth_hdr = eth;
 	int proto = eth->h_proto;
 
-	if (is_vlan(proto)) {
-		struct vlan_hdr* vlan = hc->pos;
-		if (vlan + 1 > data_end) return -1;
-		return vlan->h_vlan_encapsulated_proto;
+	struct vlan_hdr* vlan = hc->pos;
+	#pragma unroll
+	for(int i = 0; i < MAX_VLAN_DEPTH; i++) {
+		if (!is_vlan(proto)) break;
+		if (vlan + 1 > data_end) break;
+		proto = vlan->h_vlan_encapsulated_proto;
+		vlan++;
 	}
 	return proto;
 }
