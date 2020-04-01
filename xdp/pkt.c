@@ -54,8 +54,19 @@ static __always_inline int parse_eth_header(struct hdr_cursor *nh,
 	return eth->h_proto; /* network-byte-order */
 }
 
-static __always_inline int parse_eth_header_vlan(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
-	//TODO: implement this
+static __always_inline int parse_eth_vlan_header(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
+	struct ethhdr* eth = hc->pos;
+	if (hc->pos + sizeof(*eth) > data_end) return -1;
+	hc->pos += sizeof(*eth);
+	*eth_hdr = eth;
+	int proto = eth->h_proto;
+
+	if (is_vlan(proto)) {
+		struct vlan_hdr* vlan = hc->pos;
+		if (vlan + 1 > data_end) return -1;
+		return vlan->h_vlan_encapsulated_proto;
+	}
+	return proto;
 }
 
 static __always_inline int parse_ipv4_header(struct hdr_cursor* hc, void* data_end, struct iphdr** ipv4_hdr) {
@@ -111,7 +122,8 @@ int filer_func(struct xdp_md* ctx) {
 	struct ethhdr* eth_hdr;
 	struct hdr_cursor hc = { .pos = data };
 
-	pkt_type = parse_eth_header(&hc, data_end, &eth_hdr);
+	pkt_type = parse_eth_vlan_header(&hc, data_end, &eth_hdr);
+	if (pkt_type < 0) return XDP_DROP;
 	if (pkt_type == bpf_htons(ETH_P_IPV6)) {
 		struct ipv6hdr* ipv6_hdr;
 		pkt_type = parse_ipv6_header(&hc, data_end, &ipv6_hdr);
