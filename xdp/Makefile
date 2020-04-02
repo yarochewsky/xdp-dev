@@ -35,7 +35,7 @@ CFLAGS = -I ./include \
 ELFS_DIR = elfs
 SRC_DIR = src
 
-OBJS = pkt.o
+OBJS = rewrite.o
 
 all: $(OBJS)
 
