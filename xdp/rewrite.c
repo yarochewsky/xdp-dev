@@ -47,6 +47,15 @@ static __always_inline int parse_tcp_header(struct hdr_cursor* hc, void* data_en
 	return 0;
 }
 
+static __always_inline int parse_udp_header(struct hdr_cursor* hc, void* data_end, struct udphdr** udp_hdr) {
+	struct udphdr* udp_h = hc->pos;
+	if (udp_h + 1 > data_end) return -1;
+
+	*udp_hdr = udp_h;
+	hc->pos = udp_hdr + 1;
+	return 0;
+}
+
 static __always_inline int parse_eth_vlan_header(struct hdr_cursor* hc, void* data_end, struct ethhdr** eth_hdr) {
 	struct ethhdr* eth = hc->pos;
 	if (eth + 1 > data_end) return -1;
@@ -123,31 +132,20 @@ int filer_func(struct xdp_md* ctx) {
 	if (pkt_type == bpf_htons(ETH_P_IPV6)) {
 		struct ipv6hdr* ipv6_hdr;
 		pkt_type = parse_ipv6_header(&hc, data_end, &ipv6_hdr);
-		printt("pakct type is %d while proto is %d\n", pkt_type, IPPROTO_TCP);
-		if (pkt_type == IPPROTO_TCP) {
-			struct tcphdr* tcp_header;
-			if (parse_tcp_header(&hc, data_end, &tcp_header) < 0) {
-				return XDP_DROP;
-			}			
-			tcp_header->dest = bpf_ntohs(tcp_header->dest) - 1;
-			printt("dest is now:%d\n", bpf_ntohs(tcp_header->dest));
-		} else if (pkt_type == IPPROTO_UDP) {
-			return XDP_DROP;
-		}
-		return XDP_PASS;
-	} else {
+	} else if (pkt_type == bpf_htons(ETH_P_IP)) {
 		struct iphdr* ipv4_hdr;
 		pkt_type = parse_ipv4_header(&hc, data_end, &ipv4_hdr);
-//		printt("ipv4: pakct type is %d while proto is %d\n", pkt_type, IPPROTO_TCP);
-			struct tcphdr* tcp_header;
-			if (parse_tcp_header(&hc, data_end, &tcp_header) < 0) {
-				return XDP_DROP;
-			}			
-//			printt("dest was:%d\n", bpf_ntohs(tcp_header->dest));
-			tcp_header->dest = bpf_ntohs(tcp_header->dest) - 1;
-			printt("dest is now:%d\n", bpf_ntohs(tcp_header->dest));
-	
-		return XDP_PASS;
+	}
+	if (pkt_type == IPPROTO_TCP) {
+		struct tcphdr* tcp_header;
+		if (parse_tcp_header(&hc, data_end, &tcp_header) < 0) return XDP_DROP; // just so that we can notice somethign is wrong
+		printt("packet to port %d\n", bpf_ntohs(tcp_header->dest));
+		tcp_header->dest = bpf_ntohs(tcp_header->dest) - 1;
+	} else if (pkt_type == IPPROTO_UDP) {
+		struct udphdr* udp_hdr;
+		if (parse_udp_header(&hc, data_end, &udp_hdr) < 0) return XDP_DROP;
+		printt("udp packet to port %d\n", bpf_ntohs(udp_hdr->dest));
+		udp_hdr->dest = bpf_ntohs(udp_hdr->dest) - 1;	
 	}
 	return XDP_PASS;
 }

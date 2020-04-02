@@ -8,7 +8,8 @@ CFLAGS_USER = -Wunused \
 	-Wall \
 	-Wno-compare-distinct-pointer-types \
 	-fno-stack-protector \
-	-Wno-pointer-sign 
+	-Wno-pointer-sign \
+	-Werror-no=unused
 
 LINK_USER = -L. -I../libbpf/src/root/usr/include/ -lbpf -lelf -lz 
 
