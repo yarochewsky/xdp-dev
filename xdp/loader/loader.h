@@ -21,6 +21,16 @@
 int load_xdp_object_file(const char* filename, int ifindex, struct bpf_object** obj);
 
 /**
+	load_ebpf_tracepoint_file: loads an ebpf program from a filename
+	
+	@filename: filepath of program to load
+	@obj: return param for loaded object
+
+	@returns non-zero for error
+**/
+int load_ebpf_tracepoint_file(const char* filename, struct bpf_object** obj);
+
+/**
 	xdp_link_detach: detaches the current xdp program from the interface
 
 	@ifindex: interface index of attached program

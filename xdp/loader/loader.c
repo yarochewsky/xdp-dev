@@ -50,6 +50,23 @@ int load_xdp_object_file(const char* filename, int ifindex, struct bpf_object** 
 	return 0;	
 }
 
+int load_ebpf_tracepoint_file(const char* filename, struct bpf_object** obj) {
+	int fd = -1;
+	int err;
+
+	struct bpf_prog_load_attr attr = {
+		.prog_type = BPF_PROG_TYPE_TRACEPOINT,
+		.file = filename,
+	};
+
+	err = bpf_prog_load_xattr(&attr, obj, &fd);
+	if (err) {
+		fprintf(stderr, "err: loading ebpf object file(%s): %s\n", filename, strerror(-err));
+		return -1;
+	}
+	return 0;
+}
+
 int xdp_link_detach(int ifindex, __u32 xdp_flags) {
 	int err;
 
