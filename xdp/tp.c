@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <net/if.h>
 #include <linux/if_link.h>
-#include <linux/limits.h>
 #include <bpf/bpf.h>
 #include <bpf/libbpf.h>
 
@@ -115,47 +114,37 @@ if (efd < 0)
 printf("perf_event_open error: %s\n", strerror(errno));
 exit(-1);
 }
-int ret = ioctl(efd, PERF_EVENT_IOC_SET_BPF, fd);
-if (ret < 0)
-{
-printf("PERF_EVENT_IOC_SET_BPF error: %s\n", strerror(errno));
-exit(-1);
-}
-ret = ioctl(efd, PERF_EVENT_IOC_ENABLE, 0);
+int ret = ioctl(efd, PERF_EVENT_IOC_ENABLE, 0);
 if (ret < 0)
 {
 printf("PERF_EVENT_IOC_ENABLE error: %s\n", strerror(errno));
 exit(-1);
 }
-
-int map_fd = bpf_object__find_map_fd_by_name(obj, "enter_open_map");
-if (map_fd < 0) {
-	fprintf(stderr, "err: could not find map by name %s\n", "enter_open_map");
-	return -1;
+ret = ioctl(efd, PERF_EVENT_IOC_SET_BPF, fd);
+if (ret < 0)
+{
+printf("PERF_EVENT_IOC_SET_BPF error: %s\n", strerror(errno));
+exit(-1);
 }
+
+	int map_fd = bpf_object__find_map_fd_by_name(obj, "enter_open_map");
+	if (map_fd < 0) {
+		fprintf(stderr, "err: could not find map by name %s\n", "enter_open_map");
+		return -1;
+  }
+
+__u64 key;
+void* keyp = &key, *prev_keyp = NULL;
 
 struct args {
-	char filename[64];
+//	char filename[256];
+	const char* filename;
 };
 
-unsigned int n_cpus = bpf_num_possible_cpus();
-char vals[n_cpus][PATH_MAX];
-
-while(1) {
-	__u32 entry = 0;
-	if ((bpf_map_lookup_elem(map_fd, &entry, vals))) {
-		fprintf(stderr, "err: looking up key: %d\n", entry);
-		continue;
-	}
-	for (int i = 0; i < n_cpus; i++) {
-		printf("%s\n", vals[i]);
-	}	
-}
+struct args value = {};
 
 //	__u32 key = 2;
 //	unsigned int n_cpus = bpf_num_possible_cpus();
-/// 	struct stats vals[n_cpus];
-//
 //	while(true) {
 //			__u64 sum_pkts = 0;
 //			__u64 sum_bytes = 0;
