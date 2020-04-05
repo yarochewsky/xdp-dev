@@ -137,7 +137,8 @@ __u64 key;
 void* keyp = &key, *prev_keyp = NULL;
 
 struct args {
-	char filename[256];
+//	char filename[256];
+	const char* filename;
 };
 
 struct args value = {};
@@ -153,7 +154,7 @@ while(1) {
 					"ERR: bpf_map_lookup_elem failed key:0x%llx\n", key);
 		}
 		prev_keyp = keyp;
-		printf("%s\n", value.filename);
+		printf("%s", value.filename);
 }
 
 //	__u32 key = 2;
