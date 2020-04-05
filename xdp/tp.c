@@ -133,19 +133,18 @@ exit(-1);
 		return -1;
   }
 
-__u64 key;
-void* keyp = &key, *prev_keyp = NULL;
-
-struct args {
-//	char filename[256];
-	const char* filename;
-};
-
-struct args value = {};
-
-//	__u32 key = 2;
-//	unsigned int n_cpus = bpf_num_possible_cpus();
-//	while(true) {
+	unsigned int n_cpus = bpf_num_possible_cpus();
+	char vals[n_cpus][PATH_MAX];
+	while (1) {
+			__u32 entry = 0;
+			if ((bpf_map_lookup_elem(map_fd, &entry, vals)) != 0) {
+				fprintf(stderr, "err: looking up key: %d\n", entry);
+				continue;
+			}
+			for (int i = 0; i < n_cpus; i++) {
+				printf("%s\n", vals[i]);
+			}
+	}
 //			__u64 sum_pkts = 0;
 //			__u64 sum_bytes = 0;
 //			if((bpf_map_lookup_elem(map_fd, &key, vals)) != 0) {
