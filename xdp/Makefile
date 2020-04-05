@@ -36,7 +36,7 @@ CFLAGS = -I ./include \
 ELFS_DIR = elfs
 SRC_DIR = src
 
-OBJS = rewrite.o
+OBJS = open.o
 
 all: $(OBJS)
 
@@ -47,6 +47,12 @@ BIN_DIR = bin
 
 main: main.o loader.o
 	$(CLANG) main.o loader/loader.o $(LINK_USER) -o $(BIN_DIR)/main  	
+
+tp: tp.o loader.o
+	$(CLANG) tp.o loader/loader.o $(LINK_USER) -o $(BIN_DIR)/tp	
+
+tp.o: tp.c
+	$(CLANG) -Wall -I../libbpf/src/root/usr/include/ -c tp.c -o tp.o
 
 main.o: main.c
 	$(CLANG) -Wall -I../libbpf/src/root/usr/include/ -c main.c -o main.o
